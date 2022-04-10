@@ -1,0 +1,208 @@
+---
+title: Does turning the ball over affect how many points a team scores per game
+author: Quinn Navara
+date: '2022-04-10'
+slug: does-turning-the-ball-over-affect-how-many-points-a-team-scores-per-game
+categories: []
+tags: []
+---
+
+In the game of basketball, turning over the ball is one of the most detrimental things a team can do to lose a game. In order to win a game, one team has to score more points than the other. A team has a better chance of winning if they have less turnovers than their opponent, so you'd think that the less turnovers you have, the more points you'd score. 
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+library(tidyverse)
+library(ggrepel)
+library(scales)
+library(gt)
+
+cbb21 <- read_csv("data/NEWlogs21.csv")
+
+winlosslogs <- cbb21 %>% mutate(winloss = case_when(
+  grepl("W", W_L) ~ 1, 
+  grepl("L", W_L) ~ 0)
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+avg <- winlosslogs %>% 
+  group_by(Team, Conference) %>% 
+  summarise(
+    TotalTurnovers = sum(TeamTurnovers),
+    TotalPts = sum(TeamScore),
+    TotalGames = sum(Game),
+    TotalWins = sum(winloss),
+    total = n()
+  )
+
+NEWavg <- avg %>% 
+  group_by(Team, Conference) %>% 
+  mutate(
+    AverageTurnoversPerGame = TotalTurnovers/total,
+    AveragePointsPerGame = TotalPts/total
+  )
+
+baylor <- NEWavg %>% filter(Team == "Baylor")
+
+gonzaga <- NEWavg %>% filter(Team == "Gonzaga")
+
+houston <- NEWavg %>% filter(Team == "Houston")
+
+ucla <- NEWavg %>% filter(Team == "UCLA")
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+ggplot() + 
+  geom_point(data=NEWavg, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame)) +
+  geom_smooth(data=NEWavg, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), method="lm") +
+  labs(x="Average Turnovers per Game", y="Average Points per Game", caption="Source: NCAA | Graphic by Quinn Navara") +
+  theme_minimal()
+
+```
+
+There's a negative correlation between a team's average points per game and their average turnovers per game. The more points per game a team averages, the less turnovers per game they have and vice versa.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+ggplot() + 
+  geom_point(
+    data=NEWavg, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, size=TotalWins), 
+    color="grey", 
+    alpha=.5) + 
+  geom_point(
+    data=baylor, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, size=TotalWins), 
+    color="#FFB81C") + 
+  geom_point(
+    data=gonzaga, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, size=TotalWins), 
+    color="#041E42") +
+  geom_point(
+    data=houston, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, size=TotalWins), 
+    color="#C8102E") +
+  geom_point(
+    data=ucla, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, size=TotalWins), 
+    color="#2D68C4") +
+  geom_text_repel(
+    data=baylor, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, label=Team)
+  ) +
+  geom_text_repel(
+    data=gonzaga, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, label=Team)
+  ) +
+  geom_text_repel(
+    data=houston, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, label=Team)
+  ) +
+  geom_text_repel(
+    data=ucla, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, label=Team)
+  ) +
+   geom_vline(xintercept = 12.72) + 
+  geom_hline(yintercept = 71.38) +
+  labs(title="2020-21's Final Four teams were offensive giants", subtitle="All 4 teams exceeded the nation's averages in points and turnovers per game.", x="Average Turnovers per Game", y="Average Points per Game", caption="Source: NCAA | Graphic by Quinn Navara")  + theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.title = element_text(size = 8), 
+    plot.subtitle = element_text(size=10), 
+    panel.grid.minor = element_blank()
+    )
+  
+
+```
+
+In the 2020-21 NCAA tournament, we saw Gonzaga, Baylor, Houston, and UCLA all make the Final Four. All teams were truly talented on the offensive end, but Gonzaga was hands down the best offensive team when talking about scoring the ball. Gonzaga averaged 90 points per game. the most out of the Final Four teams. However, they averaged the most turnovers per game out of the four; which was still below the nation's average turnovers per game. Statistically, no one even comes close to what Gonzaga accomplished offensively last season. In the end, Baylor beat the Bulldogs and ended their undefeated season to become national champions. 
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+bigten <- NEWavg %>% filter(Conference == "Big Ten")
+
+iowa <- NEWavg %>% filter(Team == "Iowa")
+
+michigan <- NEWavg %>% filter(Team == "Michigan")
+
+illinois <- NEWavg %>% filter(Team == "Illinois")
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+ggplot() + 
+  geom_point(data=NEWavg, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), color = "grey", alpha = .8) +
+  geom_smooth(data=NEWavg, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), method="lm") +
+  geom_point(data=bigten, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), color="red") +
+  geom_point(data=iowa, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), color="yellow") +
+  geom_point(data=michigan, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), color="purple") +
+  geom_point(data=illinois, aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame), color="orange") +
+  geom_text_repel(
+    data=iowa, 
+    aes(x=AverageTurnoversPerGame, y=AveragePointsPerGame, label=Team)
+  ) +
+    geom_text_repel(
+    data=michigan, 
+    aes(x=`AverageTurnoversPerGame` - .1, y=`AveragePointsPerGame` + .8, label=Team)
+  ) +
+    geom_text_repel(
+    data=illinois, 
+    aes(x=AverageTurnoversPerGame, y=`AveragePointsPerGame`, label=Team)
+  ) + 
+    labs(title="Iowa should've won the Big Ten regular season last year", subtitle="The Hawkeyes finished a meer 3rd in the conference, despite being a statistical juggernaut.", x="Average Turnovers per Game", y="Average Points per Game", caption="Source: NCAA | Graphic by Quinn Navara")  + theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.title = element_text(size = 8), 
+    plot.subtitle = element_text(size=10), 
+    panel.grid.minor = element_blank()
+    )
+
+```
+
+* Red dots indicate the Big Ten teams
+
+The Big Ten men's basketball season is always one to watch. Despite last season being the "COVID season", the Big Ten regular season was still very competitive. Michigan outlasted Illinois and Iowa to become the Big Ten regular season champions. But who should have really won? Statistically, all fingers point to Iowa. The Hawkeyes averaged the most points in the conference, while also averaging the second least turnovers. No one, besides Illinois, came truly close to scoring as many points as them. Iowa was in the conversation for having the best offense in the 2020-21 season. You could almost say that the Hawkeyes underachieved by not winning the Big Ten regular season with how they performed offensively. 
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+NEWbigten <- bigten %>% 
+select(Team, Conference, AverageTurnoversPerGame, AveragePointsPerGame)
+
+bigtenwide <- NEWbigten %>% 
+  pivot_longer(
+    cols=starts_with("Average"), 
+    names_to="Type", 
+    values_to="Averages") 
+
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(bigtenwide, aes(x=reorder(Team, Averages), weight=Averages, fill=Type)) + 
+  geom_bar() + 
+  coord_flip() +
+  labs(
+    y = "Average Points per Game",
+    x = "Team/Average Turnovers per Game",
+    title = "Illinois and Iowa stand alone at the top in points per game",
+    subtitle = "Nebraska averaged the 5th most points per game, despite leading the league in average turnovers.",
+    caption = "NCAA | Graphic by Quinn Navara"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 10),
+    axis.title = element_text(size = 8),
+    panel.grid.minor = element_blank()
+  )
+```
+
+As said previously, the Big Ten conference is always competitive. Last season, all 14 teams averaged more than 75 points per game, even Wisconsin who's known for their slow paced offense. Also, every team but Nebraska was below the nation's average of turnovers per game in 12.7. Despite winning the 2020-21 Big Ten regular season championship, Michigan was not the most prolific offensive team. Illinois and Iowa were the two teams that stood out the most offensively. The Nebraska Cornhuskers also shined in scoring the ball but didn't keep care of it. 
+
+The amount of points you score correlates with how many turnovers you have. The more turnovers you have, most likely you won't score as many points as you should. The less turnovers you have, you will probably score more points. However, there will always be other factors that can affect these two variables. 
